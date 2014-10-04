@@ -1,0 +1,17 @@
+[package]
+
+name    = "p2dux"
+version = "0.0.1"
+authors = [ "Jeff Olson <olson.jeffery@gmail.com>" ]
+
+[lib]
+
+name       = "p2dux"
+path       = "src/lib.rs"
+
+[dependencies.p2d]
+git = "https://github.com/olsonjeffery/p2d"
+
+[dependencies.sdl2]
+git = "https://github.com/AngryLawyer/rust-sdl2"
+
