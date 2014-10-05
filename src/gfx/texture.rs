@@ -34,7 +34,7 @@ impl TextureSheet {
         let surface = box surface;
         let texture = match renderer.create_texture_from_surface(&*surface) {
             Ok(t) => t,
-            Err(msg) => fail!("new_sprite_from: Couldn't create texture from path '{}', msg: {}")
+            Err(msg) => fail!(format!("new_sprite_from: Couldn't create texture from path '{}', msg: {}", path_str, msg))
         };
         TextureSheet { name: name,
                      surface: surface, texture: box texture }
