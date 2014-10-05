@@ -12,6 +12,7 @@ use sdl2::render::Renderer;
 use sdl2::video::Window;
 use p2d::sprite::SpriteSheet;
 use sdl2;
+use sdl2_image;
 
 pub mod draw;
 pub mod texture;
@@ -25,6 +26,8 @@ impl GameDisplay {
     pub fn new(title: &str, screen_size: (int, int, bool), ss: Vec<SpriteSheet>) -> GameDisplay {
         // first thing we do
         sdl::init(sdl2::InitVideo);
+        // and sdl2_image
+        sdl2_image::init(sdl2_image::InitPng);
 
         let (width, height, fullscreen) = screen_size;
         let window = sdl2::video::Window::new(
@@ -75,6 +78,7 @@ impl GameDisplay {
 impl Drop for GameDisplay {
     fn drop(&mut self) {
         // last thing we do
+        sdl2_image::quit();
         sdl::quit();
     }
 }

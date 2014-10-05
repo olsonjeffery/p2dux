@@ -13,6 +13,7 @@ use sdl2::surface::{Surface};
 use sdl2::render::{Renderer, Texture};
 use sdl2::rect::{Rect};
 use sdl2::video::Window;
+use sdl2_image::LoadSurface;
 
 use p2d::sprite::SpriteTile;
 
@@ -27,9 +28,9 @@ pub type TextureSheets = HashMap<String, TextureSheet>;
 impl TextureSheet {
     pub fn new(renderer: &Renderer<Window>, path_str: &String, name: String) -> TextureSheet {
         let path = Path::new(path_str.as_slice());
-        let surface = match Surface::from_bmp(&path) {
+        let surface = match LoadSurface::from_file(&path) {
             Ok(s) => s,
-            Err(msg) => fail!("new_sprite_from: Couldn't create surface from path '{}', msg: {}")
+            Err(msg) => fail!(format!("new_sprite_from: Couldn't create texture from path '{}', msg: {}", path_str, msg))
         };
         let surface = box surface;
         let texture = match renderer.create_texture_from_surface(&*surface) {
