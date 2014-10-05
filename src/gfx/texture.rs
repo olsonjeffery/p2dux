@@ -29,12 +29,12 @@ impl TextureSheet {
         let path = Path::new(path_str.as_slice());
         let surface = match Surface::from_bmp(&path) {
             Ok(s) => s,
-            Err(msg) => fail!("new_sprite_from: Couldn't create surface: ".to_string()+msg)
+            Err(msg) => fail!("new_sprite_from: Couldn't create surface from path '{}', msg: {}")
         };
         let surface = box surface;
         let texture = match renderer.create_texture_from_surface(&*surface) {
             Ok(t) => t,
-            Err(msg) => fail!("new_sprite_from: Couldn't create texture: ".to_string()+msg)
+            Err(msg) => fail!("new_sprite_from: Couldn't create texture from path '{}', msg: {}")
         };
         TextureSheet { name: name,
                      surface: surface, texture: box texture }
