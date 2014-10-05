@@ -26,7 +26,7 @@ pub trait DrawableItem {
             // .. this implies getting rid of offset..
             let screen_x = base_x + (offset_x * tile_size_x as int) as int;
             let screen_y = base_y + (offset_y * tile_size_y as int) as int;
-            sheet.draw_tile(display.renderer, st,
+            sheet.draw_tile(&*display.renderer, st,
                             (screen_x, screen_y), st.size);
         }
     }

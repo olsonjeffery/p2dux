@@ -6,9 +6,10 @@
 // except according to those terms.
 
 use std::vec::Vec;
-use collections::hashmap::HashMap;
+use std::collections::HashMap;
 use sdl2::sdl;
 use sdl2::render::Renderer;
+use sdl2::video::Window;
 use p2d::sprite::SpriteSheet;
 use sdl2;
 
@@ -16,7 +17,7 @@ pub mod draw;
 pub mod texture;
 
 pub struct GameDisplay {
-    pub renderer: ~Renderer,
+    pub renderer: Box<Renderer<Window>>,
     pub sheets: texture::TextureSheets
 }
 
@@ -43,13 +44,13 @@ impl GameDisplay {
             Err(err) => fail!(format!("failed to create renderer: {}", err))
         };
         let mut display = GameDisplay {
-            renderer: renderer,
+            renderer: box renderer,
             sheets: HashMap::new()
         };
         // build TextureSheets
         for s in ss.iter() {
             display.sheets.find_or_insert(s.name.clone(), texture::TextureSheet::new(
-                display.renderer,
+                &*display.renderer,
                 &s.path,
                 s.name.clone()));
         }

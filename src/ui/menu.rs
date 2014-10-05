@@ -12,11 +12,11 @@ use gfx::GameDisplay;
 use super::{UiBox, UiFont, draw_text_box, compute_text_box_bounds};
 
 pub struct VertTextMenu<TFont, TBox> {
-    pub entries: Vec<~str>,
-    pub formatted_entries: Vec<~str>,
+    pub entries: Vec<String>,
+    pub formatted_entries: Vec<String>,
     pub bg_color: (u8, u8, u8),
-    pub selected_prefix: ~str,
-    pub unselected_prefix: ~str,
+    pub selected_prefix: String,
+    pub unselected_prefix: String,
     pub curr_selected: uint,
     pub coords: (int, int),
     pub box_size: (uint, uint),
@@ -30,8 +30,8 @@ impl<TFont: UiFont, TBox: UiBox>
             entries: Vec::new(),
             formatted_entries: Vec::new(),
             bg_color: (0,0,0),
-            selected_prefix: ~"",
-            unselected_prefix: ~"",
+            selected_prefix: "".to_string(),
+            unselected_prefix: "".to_string(),
             curr_selected: 0,
             coords: (0,0),
             box_size: (0,0),
@@ -61,7 +61,7 @@ impl<TFont: UiFont, TBox: UiBox>
         self.formatted_entries.push(unselected_formatted);
         self.formatted_entries.swap_remove(old_selected);
     }
-    fn get_formatted(&mut self, v: uint) -> ~str {
+    fn get_formatted(&self, v: uint) -> String {
         let entry = self.entries.get(v);
         let prefix = if v == self.curr_selected {
             &self.selected_prefix

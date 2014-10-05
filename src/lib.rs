@@ -17,6 +17,7 @@ extern crate uuid;
 extern crate collections;
 extern crate sdl2;
 extern crate p2d;
+extern crate debug;
 use time::precise_time_ns;
 
 pub mod gfx;

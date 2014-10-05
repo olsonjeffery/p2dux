@@ -13,7 +13,7 @@ use gfx::GameDisplay;
 pub mod menu;
 
 pub trait UiFont {
-    fn get_sheet(&self) -> ~str;
+    fn get_sheet(&self) -> String;
     fn sprite_for<'a>(&'a self, c: &char) -> Option<&'a SpriteTile>;
 
     fn draw_line(&self, display: &GameDisplay, coords: (int, int), text: &str, gap: uint) {
@@ -22,9 +22,9 @@ pub trait UiFont {
         let text_slice = text.slice_from(0);
         for c in text_slice.chars() {
             let font_sprite = self.sprite_for(&c).expect(
-                format!("Sprite not found for {:?}! Shouldn't happen...", c));
+                format!("Sprite not found for {:?}! Shouldn't happen...", c).as_slice());
             let (fsx, _) = font_sprite.size;
-            sheet.draw_tile(display.renderer, font_sprite, (cx, cy), font_sprite.size);
+            sheet.draw_tile(&*display.renderer, font_sprite, (cx, cy), font_sprite.size);
             cx += (fsx+gap) as int;
         }
     }
@@ -33,7 +33,7 @@ pub trait UiFont {
         let text_slice = text.slice_from(0);
         for c in text_slice.chars() {
             let font_sprite = self.sprite_for(&c).expect(
-                format!("Sprite not found for {:?}! Shouldn't happen...", c));
+                format!("Sprite not found for {:?}! Shouldn't happen...", c).as_slice());
             let (fsx, _) = font_sprite.size;
             total_len += fsx + gap;
         }
@@ -43,7 +43,7 @@ pub trait UiFont {
 
 pub trait UiBox {
     fn unit_size(&self) -> uint;
-    fn get_sheet(&self) -> ~str;
+    fn get_sheet(&self) -> String;
     fn get_ul_corner<'a>(&'a self) -> &'a SpriteTile;
     fn get_ur_corner<'a>(&'a self) -> &'a SpriteTile;
     fn get_ll_corner<'a>(&'a self) -> &'a SpriteTile;
@@ -73,19 +73,19 @@ pub trait UiBox {
         }
         // draw corners
         let (ul_x, ul_y) = coords;
-        sheet.draw_tile(display.renderer, self.get_ul_corner(),
+        sheet.draw_tile(&*display.renderer, self.get_ul_corner(),
                         (ul_x, ul_y), tile_size);
         let (ur_x, ur_y) = (start_x + (unit_size * (w-1)) as int,
                         start_y);
-        sheet.draw_tile(display.renderer, self.get_ur_corner(),
+        sheet.draw_tile(&*display.renderer, self.get_ur_corner(),
                         (ur_x, ur_y), tile_size);
         let (ll_x, ll_y) = (start_x,
                         start_y + (unit_size * (h-1)) as int);
-        sheet.draw_tile(display.renderer, self.get_ll_corner(),
+        sheet.draw_tile(&*display.renderer, self.get_ll_corner(),
                         (ll_x, ll_y), tile_size);
         let (lr_x, lr_y) = (start_x + (unit_size * (w-1) as int),
                         start_y + (unit_size * (h-1)) as int);
-        sheet.draw_tile(display.renderer, self.get_lr_corner(),
+        sheet.draw_tile(&*display.renderer, self.get_lr_corner(),
                         (lr_x, lr_y), tile_size);
         //top/bottom
         let (top_y, bottom_y) = (ul_y, ll_y);
@@ -93,9 +93,9 @@ pub trait UiBox {
         while tb_x < ur_x {
             let top_coords = (tb_x, top_y);
             let bottom_coords = (tb_x, bottom_y);
-            sheet.draw_tile(display.renderer, self.get_top(),
+            sheet.draw_tile(&*display.renderer, self.get_top(),
                             top_coords, tile_size);
-            sheet.draw_tile(display.renderer, self.get_bottom(),
+            sheet.draw_tile(&*display.renderer, self.get_bottom(),
                             bottom_coords, tile_size);
             tb_x += unit_size;
         }
@@ -105,9 +105,9 @@ pub trait UiBox {
         while left_right_y < ll_y {
             let left_coords = (left_x, left_right_y);
             let right_coords = (right_x, left_right_y);
-            sheet.draw_tile(display.renderer, self.get_left(),
+            sheet.draw_tile(&*display.renderer, self.get_left(),
                             left_coords, tile_size);
-            sheet.draw_tile(display.renderer, self.get_right(),
+            sheet.draw_tile(&*display.renderer, self.get_right(),
                             right_coords, tile_size);
             left_right_y += unit_size;
         }
@@ -116,7 +116,7 @@ pub trait UiBox {
 
 pub fn draw_text_box<TFont: UiFont, TBox: UiBox>(
         display: &GameDisplay, coords: (int, int), size_in_units: (uint, uint),
-        bg_color: (u8, u8, u8), lines: &[~str], ux_font: &TFont, ux_box: &TBox,
+        bg_color: (u8, u8, u8), lines: &[String], ux_font: &TFont, ux_box: &TBox,
         gap: uint) {
     // draw backing box
     ux_box.draw_box(display, coords, size_in_units, bg_color);
@@ -127,18 +127,18 @@ pub fn draw_text_box<TFont: UiFont, TBox: UiBox>(
     let mut curr_y = start_y + box_unit_size as int;
     for curr_line in lines.iter() {
         let l_coords = (start_x as int, curr_y as int);
-        ux_font.draw_line(display, l_coords, *curr_line, gap);
+        ux_font.draw_line(display, l_coords, curr_line.as_slice(), gap);
         curr_y += box_unit_size as int + (box_unit_size >> 2) as int;
     }
 }
 
 pub fn compute_text_box_bounds<TFont: UiFont, TBox: UiBox>(
-        lines: &[~str], ui_font: &TFont, ui_box: &TBox,
+        lines: &[String], ui_font: &TFont, ui_box: &TBox,
         text_gap: uint) -> (uint, uint) {
     // figure out width, in pixels, of the text (based on longest entry line)
     let mut longest_len = 0;
     for line in lines.iter() {
-        let flen = ui_font.compute_len(*line, text_gap);
+        let flen = ui_font.compute_len(line.as_slice(), text_gap);
         if flen > longest_len {
             longest_len = flen;
         }

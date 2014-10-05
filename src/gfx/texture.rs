@@ -7,38 +7,40 @@
 
 use std::result::{Ok, Err};
 use std::option::{Some};
-use collections::hashmap::HashMap;
+use std::collections::HashMap;
 
 use sdl2::surface::{Surface};
 use sdl2::render::{Renderer, Texture};
 use sdl2::rect::{Rect};
+use sdl2::video::Window;
 
 use p2d::sprite::SpriteTile;
 
 pub struct TextureSheet {
-    name: ~str,
-    surface: ~Surface,
-    texture: ~Texture
+    name: String,
+    surface: Box<Surface>,
+    texture: Box<Texture>
 }
 
-pub type TextureSheets = HashMap<~str, TextureSheet>;
+pub type TextureSheets = HashMap<String, TextureSheet>;
 
 impl TextureSheet {
-    pub fn new(renderer: &Renderer, path_str: &~str, name: ~str) -> TextureSheet {
+    pub fn new(renderer: &Renderer<Window>, path_str: &String, name: String) -> TextureSheet {
         let path = Path::new(path_str.as_slice());
         let surface = match Surface::from_bmp(&path) {
             Ok(s) => s,
-            Err(msg) => fail!("new_sprite_from: Couldn't create surface: "+msg)
+            Err(msg) => fail!("new_sprite_from: Couldn't create surface: ".to_string()+msg)
         };
-        let texture = match renderer.create_texture_from_surface(surface) {
+        let surface = box surface;
+        let texture = match renderer.create_texture_from_surface(&*surface) {
             Ok(t) => t,
-            Err(msg) => fail!("new_sprite_from: Couldn't create texture: "+msg)
+            Err(msg) => fail!("new_sprite_from: Couldn't create texture: ".to_string()+msg)
         };
         TextureSheet { name: name,
-                     surface: surface, texture: texture }
+                     surface: surface, texture: box texture }
     }
 
-    pub fn draw_tile(&self, renderer: &Renderer, st: &SpriteTile,
+    pub fn draw_tile(&self, renderer: &Renderer<Window>, st: &SpriteTile,
                      dst_coords: (int, int), dst_size: (uint, uint)) -> bool {
         //let (x, y) = dst;
         let (tile_x, tile_y) = st.coords;
@@ -48,6 +50,6 @@ impl TextureSheet {
         let (dst_size_x, dst_size_y) = dst_size;
         let dst = Some(Rect::new(dst_x as i32, dst_y as i32, dst_size_x as i32, dst_size_y as i32));
         // FIXME this is lame
-        renderer.copy(self.texture, src, dst).is_ok()
+        renderer.copy(&*self.texture, src, dst).is_ok()
     }
 }

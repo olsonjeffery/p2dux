@@ -6,8 +6,9 @@
 // except according to those terms.
 use std::io::timer;
 use std::comm::channel;
-use std::cast::transmute;
+use std::mem::transmute;
 use time::precise_time_ns;
+use std::time::duration::Duration;
 
 use sdl2::event::{Event, NoEvent, poll_event};
 
@@ -26,7 +27,7 @@ pub fn throttle(fps: uint, cb: || -> bool) {
         let now_time = precise_time_ns() / 1000000;
         if  now_time < next_frame {
             let sleep_gap = next_frame - now_time;
-            timer::sleep(sleep_gap);
+            timer::sleep(Duration::milliseconds(sleep_gap as i64));
         }
     }
 }

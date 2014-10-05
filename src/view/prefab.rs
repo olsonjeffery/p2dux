@@ -9,11 +9,11 @@ use sdl2::event::Event;
 use super::super::ui::{UiFont, UiBox};
 use super::{ActiveView, PassiveView, DisplayViewContext};
 
-pub struct TextInputDialogView<'a, TFont, TBox> {
-    input_state: ~str,
-    preface: Vec<~str>,
-    prompt: ~str,
-    cursor: ~str,
+pub struct TextInputDialogView<'a, TFont:'a, TBox:'a> {
+    input_state: String,
+    preface: Vec<String>,
+    prompt: String,
+    cursor: String,
     bg_color: (u8, u8, u8),
     coords: (int, int),
     box_size: (uint, uint),
@@ -27,12 +27,12 @@ pub struct DisplayClearerPassiveView {
 }
 
 impl<'a, TFont: UiFont, TBox: UiBox> TextInputDialogView<'a, TFont, TBox> {
-    pub fn new(ui_font: &'a TFont, ui_box: &'a TBox, seed_state: Option<~str>,
-           preface: Vec<~str>, prompt: ~str, cursor: ~str, bg_color: (u8,u8,u8),
+    pub fn new(ui_font: &'a TFont, ui_box: &'a TBox, seed_state: Option<String>,
+           preface: Vec<String>, prompt: String, cursor: String, bg_color: (u8,u8,u8),
            coords: (int, int), text_gap: uint)
     -> TextInputDialogView<'a, TFont, TBox> {
         TextInputDialogView {
-            input_state: match seed_state { Some(i) => i, None => ~"" },
+            input_state: match seed_state { Some(i) => i, None => "".to_string() },
             preface: preface,
             prompt: prompt,
             cursor: cursor,
@@ -46,15 +46,15 @@ impl<'a, TFont: UiFont, TBox: UiBox> TextInputDialogView<'a, TFont, TBox> {
     }
 }
 impl<'a, TViewCtx: DisplayViewContext, TFont: UiFont, TBox: UiBox>
-        ActiveView<TViewCtx, ~str> for TextInputDialogView<'a, TFont, TBox> {
+        ActiveView<TViewCtx, String> for TextInputDialogView<'a, TFont, TBox> {
     fn active_update<'a>(
         &'a mut self,
         _ctx: &TViewCtx,
         _events: &[Event],
         _ms_time: u64,
-        _passives: & mut Vec<&mut PassiveView<TViewCtx> >) -> Option<~str> {
+        _passives: & mut Vec<&mut PassiveView<TViewCtx> >) -> Option<String> {
         //
-        Some(~"#YOLO")
+        Some("#YOLO".to_string())
     }
 }
 
