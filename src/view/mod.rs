@@ -83,7 +83,6 @@ pub trait PassiveView<TViewCtx: DisplayViewContext> {
             }
         }
         active.passive_update(ctx, time);
-        ctx.get_display().renderer.present();
         loop {
             match poll_event() {
                 NoEvent => { break; },
@@ -91,6 +90,7 @@ pub trait PassiveView<TViewCtx: DisplayViewContext> {
             }
         }
         let result = active.active_update(ctx, events.as_slice(), time, passives);
+        ctx.get_display().renderer.present();
         passives.pop();
         result
     }
