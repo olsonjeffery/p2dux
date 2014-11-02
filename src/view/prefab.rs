@@ -4,14 +4,16 @@
 // at the top-level of this repository.
 // This file may not be copied, modified, or distributed
 // except according to those terms.
-use sdl2::event::Event;
+use sdl2::event::{Event, QuitEvent, KeyDownEvent, NoEvent, TextEditingEvent, TextInputEvent};
+use sdl2::keyboard::{start_text_input, stop_text_input};
+use sdl2::keycode::*;
 
 use super::super::ui::{UiFont, UiBox};
 use super::{ActiveView, PassiveView, DisplayViewContext};
 
 pub struct TextInputDialogView<'a, TFont:'a, TBox:'a> {
     input_state: String,
-    preface: Vec<String>,
+    preface: &'a [String],
     prompt: String,
     cursor: String,
     bg_color: (u8, u8, u8),
@@ -19,7 +21,8 @@ pub struct TextInputDialogView<'a, TFont:'a, TBox:'a> {
     box_size: (uint, uint),
     text_gap: uint,
     ui_font: &'a TFont,
-    ui_box: &'a TBox
+    ui_box: &'a TBox,
+    started: bool
 }
 
 pub struct DisplayClearerPassiveView {
@@ -27,11 +30,18 @@ pub struct DisplayClearerPassiveView {
 }
 
 impl<'a, TFont: UiFont, TBox: UiBox> TextInputDialogView<'a, TFont, TBox> {
-    pub fn new(ui_font: &'a TFont, ui_box: &'a TBox, seed_state: Option<String>,
-           preface: Vec<String>, prompt: String, cursor: String, bg_color: (u8,u8,u8),
-           coords: (int, int), text_gap: uint)
-    -> TextInputDialogView<'a, TFont, TBox> {
-        TextInputDialogView {
+    pub fn new(
+        ui_font: &'a TFont,
+        ui_box: &'a TBox,
+        seed_state: Option<String>,
+        preface: &'a [String],
+        prompt: String,
+        cursor: String,
+        bg_color: (u8,u8,u8),
+        coords: (int, int),
+        text_gap: uint)
+        -> TextInputDialogView<'a, TFont, TBox> {
+            TextInputDialogView {
             input_state: match seed_state { Some(i) => i, None => "".to_string() },
             preface: preface,
             prompt: prompt,
@@ -41,7 +51,8 @@ impl<'a, TFont: UiFont, TBox: UiBox> TextInputDialogView<'a, TFont, TBox> {
             box_size: (0,0),
             text_gap: text_gap,
             ui_font: ui_font,
-            ui_box: ui_box
+            ui_box: ui_box,
+            started: false
         }
     }
 }
@@ -50,17 +61,55 @@ impl<'a, TViewCtx: DisplayViewContext, TFont: UiFont, TBox: UiBox>
     fn active_update<'a>(
         &'a mut self,
         _ctx: &TViewCtx,
-        _events: &[Event],
+        events: &[Event],
         _ms_time: u64,
         _passives: & mut Vec<&mut PassiveView<TViewCtx> >) -> Option<String> {
         //
-        Some("#YOLO".to_string())
+        if !self.started {
+            self.started = true;
+            // call into SDL2 start text editing stuff
+            start_text_input();
+        }
+        let mut out = None;
+        for event in events.iter() {
+            match *event {
+                TextInputEvent(_, _, ref txt) => {
+                    out = None;
+                    println!("TextInputEvent: {}", txt);
+                    break;
+                },
+                TextEditingEvent(_, _, ref txt, start, length) => {
+                    out = None;
+                    println!("TextEditingEvent: {}", txt);
+                    break;
+                },
+                KeyDownEvent(_, _, key, _, _) =>
+                    match key {
+                        ReturnKey => {
+                            out = Some("YOLO".to_string());
+                            println!("done editing text?");
+                            stop_text_input();
+                            break;
+                        },
+                        key => {
+                            println!("pressed {} key", key);
+                            out = None;
+                            break;
+                        }
+                    },
+                _ => {}
+            }
+        }
+        out
     }
 }
 
 impl<'a, TViewCtx: DisplayViewContext, TFont: UiFont, TBox: UiBox>
         PassiveView<TViewCtx> for TextInputDialogView<'a, TFont, TBox> {
     fn passive_update(&mut self, _ctx: &TViewCtx, _t: u64) {
+        // should never be passive, because the active_update() impl
+        // doesn't yield_to() any other views, so we can put the logic
+        // there
     }
 }
 
@@ -69,6 +118,7 @@ impl DisplayClearerPassiveView {
         DisplayClearerPassiveView { bg_color: bgc }
     }
 }
+
 impl<TViewCtx: DisplayViewContext> PassiveView<TViewCtx> for DisplayClearerPassiveView {
     fn passive_update(&mut self, ctx: &TViewCtx, _time: u64) {
         let display = ctx.get_display();
@@ -79,6 +129,7 @@ impl<TViewCtx: DisplayViewContext> PassiveView<TViewCtx> for DisplayClearerPassi
         }
     }
 }
+
 impl<TViewCtx: DisplayViewContext> ActiveView<TViewCtx, ()>
         for DisplayClearerPassiveView {
     fn active_update<'a>(&'a mut self, _ctx: &TViewCtx, _e: &[Event], _t: u64,
