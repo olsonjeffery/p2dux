@@ -18,7 +18,7 @@ pub mod draw;
 pub mod texture;
 
 pub struct GameDisplay {
-    pub renderer: Box<Renderer<Window>>,
+    pub renderer: Box<Renderer>,
     pub sheets: texture::TextureSheets
 }
 
@@ -35,7 +35,7 @@ impl GameDisplay {
             width, height, sdl2::video::OPENGL);
         let window = match window {
             Ok(window) => window,
-            Err(err) => fail!(format!("failed to create window: {}", err))
+            Err(err) => panic!(format!("failed to create window: {}", err))
         };
         if fullscreen {
             window.set_fullscreen(sdl2::video::FTTrue);
@@ -44,7 +44,7 @@ impl GameDisplay {
             window, sdl2::render::DriverAuto, sdl2::render::ACCELERATED);
         let renderer = match renderer {
             Ok(renderer) => renderer,
-            Err(err) => fail!(format!("failed to create renderer: {}", err))
+            Err(err) => panic!(format!("failed to create renderer: {}", err))
         };
         let mut display = GameDisplay {
             renderer: box renderer,
@@ -52,7 +52,7 @@ impl GameDisplay {
         };
         // build TextureSheets
         for s in ss.iter() {
-            display.sheets.find_or_insert(s.name.clone(), texture::TextureSheet::new(
+            display.sheets.insert(s.name.clone(), texture::TextureSheet::new(
                 &*display.renderer,
                 &s.path,
                 s.name.clone()));
@@ -64,13 +64,13 @@ impl GameDisplay {
         let (r, g, b) = rgb;
         match self.renderer.set_draw_color(sdl2::pixels::RGB(r, g, b)) {
             Ok(()) => {},
-            Err(e) => fail!("set_draw_color(): failure: {}", e)
+            Err(e) => panic!("set_draw_color(): failure: {}", e)
         }
     }
     pub fn set_draw_sdl2_color(&self, rgb: sdl2::pixels::Color) {
         match self.renderer.set_draw_color(rgb) {
             Ok(()) => {},
-            Err(e) => fail!("set_draw_sdl2_color(): failure: {}", e)
+            Err(e) => panic!("set_draw_sdl2_color(): failure: {}", e)
         }
     }
 }

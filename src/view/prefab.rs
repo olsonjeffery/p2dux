@@ -124,7 +124,7 @@ impl<TViewCtx: DisplayViewContext> PassiveView<TViewCtx> for DisplayClearerPassi
         let display = ctx.get_display();
         display.set_draw_color(self.bg_color);
         match display.renderer.clear() {
-            Err(e) => fail!("Display Clearer.update(): failed to clear display: {}", e),
+            Err(e) => panic!("Display Clearer.update(): failed to clear display: {}", e),
             _ => {}
         }
     }
@@ -135,6 +135,6 @@ impl<TViewCtx: DisplayViewContext> ActiveView<TViewCtx, ()>
     fn active_update<'a>(&'a mut self, _ctx: &TViewCtx, _e: &[Event], _t: u64,
               _p: &mut Vec<&mut PassiveView<TViewCtx> >)
         -> Option<()> {
-            fail!("this should never be called.");
+            panic!("this should never be called.");
     }
 }

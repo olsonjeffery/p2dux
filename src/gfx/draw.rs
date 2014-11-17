@@ -20,7 +20,7 @@ pub trait DrawableItem {
         let sprites = self.get_sprites();
         let sheets = &display.sheets;
         for st in sprites.iter() {
-            let sheet = sheets.get(&st.sheet);
+            let sheet = sheets.get(&st.sheet).expect("DrawableItem.draw(): should be able to get sheet");
             let (tile_size_x, tile_size_y) = st.size;
             // should only need to get screen_x once this whole thing..
             // .. this implies getting rid of offset..

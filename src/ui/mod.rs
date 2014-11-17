@@ -18,11 +18,11 @@ pub trait UiFont {
 
     fn draw_line(&self, display: &GameDisplay, coords: (int, int), text: &str, gap: uint) {
         let (mut cx, cy) = coords;
-        let sheet = display.sheets.get(&self.get_sheet());
+        let sheet = display.sheets.get(&self.get_sheet()).expect("UiFont::draw_line(): should get a sheet");
         let text_slice = text.slice_from(0);
         for c in text_slice.chars() {
             let font_sprite = self.sprite_for(&c).expect(
-                format!("Sprite not found for {:?}! Shouldn't happen...", c).as_slice());
+                format!("Sprite not found for {}! Shouldn't happen...", c).as_slice());
             let (fsx, _) = font_sprite.size;
             sheet.draw_tile(&*display.renderer, font_sprite, (cx, cy), font_sprite.size);
             cx += (fsx+gap) as int;
@@ -33,7 +33,7 @@ pub trait UiFont {
         let text_slice = text.slice_from(0);
         for c in text_slice.chars() {
             let font_sprite = self.sprite_for(&c).expect(
-                format!("Sprite not found for {:?}! Shouldn't happen...", c).as_slice());
+                format!("Sprite not found for {}! Shouldn't happen...", c).as_slice());
             let (fsx, _) = font_sprite.size;
             total_len += fsx + gap;
         }
@@ -58,7 +58,7 @@ pub trait UiBox {
         let unit_size = self.unit_size() as int;
         let (w, h) = size_in_units;
         let (w, h) = (w as int, h as int);
-        let sheet = display.sheets.get(&self.get_sheet());
+        let sheet = display.sheets.get(&self.get_sheet()).expect("UiBox::draw_box(): should get a sheet");
         let tile_size = (unit_size as uint, unit_size as uint);
         // draw background
         let (r, g, b) = bg_color;
@@ -69,7 +69,7 @@ pub trait UiBox {
             start_x as i32, start_y as i32, rect_w as i32, rect_h as i32);
         match display.renderer.fill_rect(&bg_rect) {
             Ok(()) => {},
-            Err(e) => fail!("draw_box: failure in fill_rect(): {}", e)
+            Err(e) => panic!("draw_box: failure in fill_rect(): {}", e)
         }
         // draw corners
         let (ul_x, ul_y) = coords;

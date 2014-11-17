@@ -15,7 +15,6 @@ extern crate time;
 extern crate serialize;
 extern crate uuid;
 extern crate collections;
-extern crate debug;
 extern crate p2d;
 extern crate sdl2;
 extern crate sdl2_image;

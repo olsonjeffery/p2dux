@@ -62,13 +62,13 @@ impl<TFont: UiFont, TBox: UiBox>
         self.formatted_entries.swap_remove(old_selected);
     }
     fn get_formatted(&self, v: uint) -> String {
-        let entry = self.entries.get(v);
+        let entry = &self.entries[v];
         let prefix = if v == self.curr_selected {
             &self.selected_prefix
         } else {
             &self.unselected_prefix
         };
-        format!("{} {}", *prefix, *entry)
+        format!("{} {}", *prefix, entry)
     }
     pub fn update_bounds(&mut self, coords: (int, int), ui_font: &TFont, ui_box: &TBox) {
         // figure out width, in pixels, of the text (based on longest entry line)

@@ -6,7 +6,7 @@
 // except according to those terms.
 use std::io::timer;
 use std::comm::channel;
-use std::mem::transmute;
+use std::mem::transmute_copy;
 use time::precise_time_ns;
 use std::time::duration::Duration;
 
@@ -32,20 +32,10 @@ pub fn throttle(fps: uint, cb: || -> bool) {
     }
 }
 
-fn cb_loop(cb: || -> bool) {
-    loop {
-        match cb() {
-            false => break,
-            _ => {}
-        }
-    }
-}
-
 pub trait DisplayViewContext {
     fn get_display<'a>(&'a self) -> &'a GameDisplay;
 }
 
-// ViewManager API exploration
 pub trait ActiveView<TViewCtx: DisplayViewContext, TOut: Send> : PassiveView<TViewCtx> {
     fn active_update<'a>(&'a mut self, ctx: &TViewCtx, events: &[Event], ms_time: u64,
                          passives: & mut Vec<& mut PassiveView<TViewCtx> >)
@@ -54,44 +44,53 @@ pub trait ActiveView<TViewCtx: DisplayViewContext, TOut: Send> : PassiveView<TVi
                                 active: &mut ActiveView<TViewCtx, TOut>,
                                 passives: &mut Vec<&mut PassiveView<TViewCtx> >) -> TOut {
         let (sender, receiver) = channel();
-        cb_loop(|| {
-            match self._yield_inner(ctx, active, passives) {
-                Some(out) => { sender.send(out); false },
-                None => true
+        let mut cont = true;
+        while cont {
+            let time = precise_time_ns() / 1000000;
+
+            // eh heh heh heh
+            unsafe {
+                //previously had a `&mut PassiveView<TViewCtx>)` cast in this transmute...
+                let yielding = transmute_copy(self);
+                //passives.push(yielding);
+                passives.push(yielding);
             }
-        });
+            let mut events = Vec::new();
+            {
+                for view in passives.iter_mut() {
+                    view.passive_update(ctx, time);
+                }
+            }
+            active.passive_update(ctx, time);
+            loop {
+                match poll_event() {
+                    NoEvent => { break; },
+                    event => { events.push(event); }
+                }
+            }
+            let result = active.active_update(ctx, events.as_slice(), time, passives);
+            ctx.get_display().renderer.present();
+            passives.pop();
+            if result.is_some() {
+                cont = false;
+                sender.send(result.expect("definitely gonna be something!"));
+            }
+            /*
+            match self._yield_inner(ctx, active, passives) {
+                Some(out) => {
+                    sender.send(out);
+                    cont = false;
+                },
+                None => {
+                    cont = true;
+                }
+            }
+            */
+        }
         receiver.recv()
     }
 }
 
 pub trait PassiveView<TViewCtx: DisplayViewContext> {
     fn passive_update(&mut self, ctx: &TViewCtx, ms_time: u64);
-    fn _yield_inner<TOut: Send>(&mut self, ctx: &TViewCtx,
-                         active: & mut ActiveView<TViewCtx, TOut>,
-                         passives: & mut Vec<& mut PassiveView<TViewCtx> >) -> Option<TOut> {
-        let time = precise_time_ns() / 1000000;
-
-        // eh heh heh heh
-        unsafe {
-            let yielding = transmute(self as &mut PassiveView<TViewCtx>);
-            passives.push(yielding);
-        }
-        let mut events = Vec::new();
-        {
-            for view in passives.mut_iter() {
-                view.passive_update(ctx, time);
-            }
-        }
-        active.passive_update(ctx, time);
-        loop {
-            match poll_event() {
-                NoEvent => { break; },
-                event => { events.push(event); }
-            }
-        }
-        let result = active.active_update(ctx, events.as_slice(), time, passives);
-        ctx.get_display().renderer.present();
-        passives.pop();
-        result
-    }
 }

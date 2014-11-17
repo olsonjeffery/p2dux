@@ -26,22 +26,22 @@ pub struct TextureSheet {
 pub type TextureSheets = HashMap<String, TextureSheet>;
 
 impl TextureSheet {
-    pub fn new(renderer: &Renderer<Window>, path_str: &String, name: String) -> TextureSheet {
+    pub fn new(renderer: &Renderer, path_str: &String, name: String) -> TextureSheet {
         let path = Path::new(path_str.as_slice());
         let surface = match LoadSurface::from_file(&path) {
             Ok(s) => s,
-            Err(msg) => fail!(format!("new_sprite_from: Couldn't create texture from path '{}', msg: {}", path_str, msg))
+            Err(msg) => panic!(format!("new_sprite_from: Couldn't create texture from path '{}', msg: {}", path_str, msg))
         };
         let surface = box surface;
         let texture = match renderer.create_texture_from_surface(&*surface) {
             Ok(t) => t,
-            Err(msg) => fail!(format!("new_sprite_from: Couldn't create texture from path '{}', msg: {}", path_str, msg))
+            Err(msg) => panic!(format!("new_sprite_from: Couldn't create texture from path '{}', msg: {}", path_str, msg))
         };
         TextureSheet { name: name,
                      surface: surface, texture: box texture }
     }
 
-    pub fn draw_tile(&self, renderer: &Renderer<Window>, st: &SpriteTile,
+    pub fn draw_tile(&self, renderer: &Renderer, st: &SpriteTile,
                      dst_coords: (int, int), dst_size: (uint, uint)) -> bool {
         //let (x, y) = dst;
         let (tile_x, tile_y) = st.coords;

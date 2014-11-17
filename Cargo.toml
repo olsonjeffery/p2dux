@@ -18,3 +18,5 @@ git = "https://github.com/AngryLawyer/rust-sdl2"
 [dependencies.sdl2_image]
 git = "https://github.com/xsleonard/rust-sdl2_image"
 
+[dependencies.uuid]
+git = "https://github.com/rust-lang/uuid"
