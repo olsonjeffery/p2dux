@@ -36,12 +36,13 @@ pub trait DisplayViewContext {
     fn get_display<'a>(&'a self) -> &'a GameDisplay;
 }
 
+// ViewManager API exploration
 pub trait ActiveView<TViewCtx: DisplayViewContext, TOut: Send> : PassiveView<TViewCtx> {
     fn active_update<'a>(&'a mut self, ctx: &TViewCtx, events: &[Event], ms_time: u64,
                          passives: & mut Vec<& mut PassiveView<TViewCtx> >)
                          -> Option<TOut>;
-    fn yield_to<'a, TOut: Send>(&'a mut self, ctx: &TViewCtx,
-                                active: &mut ActiveView<TViewCtx, TOut>,
+    fn yield_to<'a, TOut: Send, TActive: ActiveView<TViewCtx, TOut>>(&'a mut self, ctx: &TViewCtx,
+                                active: &mut TActive,
                                 passives: &mut Vec<&mut PassiveView<TViewCtx> >) -> TOut {
         let (sender, receiver) = channel();
         let mut cont = true;
@@ -75,17 +76,6 @@ pub trait ActiveView<TViewCtx: DisplayViewContext, TOut: Send> : PassiveView<TVi
                 cont = false;
                 sender.send(result.expect("definitely gonna be something!"));
             }
-            /*
-            match self._yield_inner(ctx, active, passives) {
-                Some(out) => {
-                    sender.send(out);
-                    cont = false;
-                },
-                None => {
-                    cont = true;
-                }
-            }
-            */
         }
         receiver.recv()
     }
