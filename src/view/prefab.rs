@@ -4,7 +4,8 @@
 // at the top-level of this repository.
 // This file may not be copied, modified, or distributed
 // except according to those terms.
-use sdl2::event::{Event, QuitEvent, KeyDownEvent, NoEvent, TextEditingEvent, TextInputEvent};
+use sdl2::event::Event;
+use sdl2::event::Event::{TextInput, TextEditing, KeyDown};
 use sdl2::keyboard::{start_text_input, stop_text_input};
 use sdl2::keycode::*;
 
@@ -73,19 +74,19 @@ impl<'a, TViewCtx: DisplayViewContext, TFont: UiFont, TBox: UiBox>
         let mut out = None;
         for event in events.iter() {
             match *event {
-                TextInputEvent(_, _, ref txt) => {
+                TextInput(_, _, ref txt) => {
                     out = None;
                     println!("TextInputEvent: {}", txt);
                     break;
                 },
-                TextEditingEvent(_, _, ref txt, start, length) => {
+                TextEditing(_, _, ref txt, start, length) => {
                     out = None;
                     println!("TextEditingEvent: {}", txt);
                     break;
                 },
-                KeyDownEvent(_, _, key, _, _) =>
+                KeyDown(_, _, key, _, _) =>
                     match key {
-                        ReturnKey => {
+                        Return => {
                             out = Some("YOLO".to_string());
                             println!("done editing text?");
                             stop_text_input();

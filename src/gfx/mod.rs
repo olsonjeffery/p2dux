@@ -41,7 +41,7 @@ impl GameDisplay {
             window.set_fullscreen(sdl2::video::FTTrue);
         }
         let renderer = Renderer::from_window(
-            window, sdl2::render::DriverAuto, sdl2::render::ACCELERATED);
+            window, sdl2::render::RenderDriverIndex::Auto, sdl2::render::ACCELERATED);
         let renderer = match renderer {
             Ok(renderer) => renderer,
             Err(err) => panic!(format!("failed to create renderer: {}", err))
