@@ -43,29 +43,33 @@ pub trait ActiveView<TViewCtx: DisplayViewContext, TOut: Send> : PassiveView<TVi
     fn active_update<'a>(&'a mut self, ctx: &TViewCtx, events: &[Event], ms_time: u64,
                          passives: &mut Vec<& mut PassiveView<TViewCtx> >)
                          -> Option<TOut>;
-    fn yield_to<'a, TOut: Send, TActive: ActiveView<TViewCtx, TOut>>(&'a mut self, ctx: &TViewCtx,
+    fn yield_to<'a, TOtherOut: Send, TActive: ActiveView<TViewCtx, TOtherOut>>(&'a mut self, ctx: &TViewCtx,
                                 active: &mut TActive,
-                                passives: &mut Vec<&mut PassiveView<TViewCtx>>) -> TOut {
+                                passives: &mut Vec<&mut PassiveView<TViewCtx>>) -> TOtherOut {
         let (sender, receiver) = channel();
         let mut cont = true;
         while cont {
             let time = precise_time_ns() / 1000000;
             let mut events = Vec::new();
-            {
-                for view in passives.iter_mut() {
-                    view.passive_update(ctx, time);
+            let result = {
+                {
+                    for view in passives.iter_mut() {
+                        println!("before passive update");
+                        view.passive_update(ctx, time);
+                        println!("after passive update");
+                    }
                 }
-            }
-            self.passive_update(ctx, time);
-            active.passive_update(ctx, time);
-            loop {
-                match poll_event() {
-                    Event::None => { break; },
-                    event => { events.push(event); }
+                active.passive_update(ctx, time);
+                loop {
+                    match poll_event() {
+                        Event::None => { break; },
+                        event => { events.push(event); }
+                    }
                 }
-            }
-            let result = active.active_update(ctx, events.as_slice(), time, passives);
-            ctx.get_display().renderer.present();
+                let result = active.active_update(ctx, events.as_slice(), time, passives);
+                ctx.get_display().renderer.present();
+                result
+            };
             if result.is_some() {
                 cont = false;
                 sender.send(result.expect("definitely gonna be something!"));
