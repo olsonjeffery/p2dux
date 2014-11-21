@@ -6,15 +6,17 @@
 // except according to those terms.
 use sdl2::event::Event;
 use sdl2::event::Event::{TextInput, TextEditing, KeyDown};
-use sdl2::keyboard::{start_text_input, stop_text_input};
+use sdl2::keyboard::{start_text_input, stop_text_input, is_text_input_active};
 use sdl2::keycode::*;
+
+use ui::{compute_text_box_bounds, draw_text_box};
 
 use super::super::ui::{UiFont, UiBox};
 use super::{ActiveView, PassiveView, DisplayViewContext};
 
 pub struct TextInputDialogView<'a, TFont:'a, TBox:'a> {
     input_state: String,
-    preface: &'a [String],
+    previous_state: String,
     prompt: String,
     cursor: String,
     bg_color: (u8, u8, u8),
@@ -23,7 +25,8 @@ pub struct TextInputDialogView<'a, TFont:'a, TBox:'a> {
     text_gap: uint,
     ui_font: &'a TFont,
     ui_box: &'a TBox,
-    started: bool
+    started: bool,
+    box_content: Vec<String>
 }
 
 pub struct DisplayClearerPassiveView {
@@ -41,27 +44,46 @@ impl<'a, TFont: UiFont, TBox: UiBox> TextInputDialogView<'a, TFont, TBox> {
         bg_color: (u8,u8,u8),
         coords: (int, int),
         text_gap: uint)
-        -> TextInputDialogView<'a, TFont, TBox> {
-            TextInputDialogView {
+            -> TextInputDialogView<'a, TFont, TBox> {
+        let mut bc = Vec::new();
+        bc.push_all(preface);
+        bc.push("".to_string());
+
+        let mut ret = TextInputDialogView {
             input_state: match seed_state { Some(i) => i, None => "".to_string() },
-            preface: preface,
+            previous_state: "".to_string(),
             prompt: prompt,
             cursor: cursor,
             bg_color: bg_color,
             coords: coords,
-            box_size: (0,0),
+            box_size: (15,4),
             text_gap: text_gap,
             ui_font: ui_font,
             ui_box: ui_box,
-            started: false
-        }
+            started: false,
+            box_content: bc
+        };
+        ret.update_content();
+        ret
+    }
+    
+    fn update_content(&mut self) {
+        self.box_content.pop();
+        self.box_content.push("".to_string());
+        let bc_last = self.box_content.len() - 1;
+        self.box_content[bc_last].push_str(self.prompt.as_slice());
+        self.box_content[bc_last].push_str(" ");
+        let is_last = self.input_state.len();
+        self.box_content[bc_last].push_str(self.input_state.slice(0, is_last));
+        self.box_content[bc_last].push_str(self.cursor.as_slice());
     }
 }
+
 impl<'a, TViewCtx: DisplayViewContext, TFont: UiFont, TBox: UiBox>
         ActiveView<TViewCtx, String> for TextInputDialogView<'a, TFont, TBox> {
     fn active_update<'a>(
         &'a mut self,
-        _ctx: &TViewCtx,
+        ctx: &TViewCtx,
         events: &[Event],
         _ms_time: u64,
         _passives: & mut Vec<&mut PassiveView<TViewCtx> >) -> Option<String> {
@@ -69,38 +91,42 @@ impl<'a, TViewCtx: DisplayViewContext, TFont: UiFont, TBox: UiBox>
         if !self.started {
             self.started = true;
             // call into SDL2 start text editing stuff
+            println!("call to start_text_input()");
             start_text_input();
         }
+        self.previous_state = self.input_state.clone();
         let mut out = None;
         for event in events.iter() {
             match *event {
-                TextInput(_, _, ref txt) => {
-                    out = None;
-                    println!("TextInputEvent: {}", txt);
-                    break;
-                },
-                TextEditing(_, _, ref txt, start, length) => {
-                    out = None;
-                    println!("TextEditingEvent: {}", txt);
-                    break;
-                },
                 KeyDown(_, _, key, _, _) =>
                     match key {
                         Return => {
-                            out = Some("YOLO".to_string());
-                            println!("done editing text?");
+                            out = Some(self.input_state.clone());
                             stop_text_input();
                             break;
                         },
-                        key => {
-                            println!("pressed {} key", key);
-                            out = None;
-                            break;
+                        Backspace => {
+                            self.input_state.pop();
                         }
+                        Escape => {
+                            out = Some("".to_string());
+                            stop_text_input();
+                            break;
+                        },
+                        _ => {}
                     },
+                TextInput(_, _, ref txt) => {
+                    out = None;
+                    self.input_state.push_str(txt.as_slice());
+                },
                 _ => {}
             }
         }
+        if self.previous_state != self.input_state {
+            self.update_content();
+        }
+        draw_text_box(ctx.get_display(), self.coords, self.box_size, self.bg_color, self.box_content.as_slice(), self.ui_font,
+                      self.ui_box, self.text_gap);
         out
     }
 }
@@ -122,6 +148,7 @@ impl DisplayClearerPassiveView {
 
 impl<TViewCtx: DisplayViewContext> PassiveView<TViewCtx> for DisplayClearerPassiveView {
     fn passive_update(&mut self, ctx: &TViewCtx, _time: u64) {
+        println!("in passive_update for DisplayClearer");
         let display = ctx.get_display();
         display.set_draw_color(self.bg_color);
         match display.renderer.clear() {
