@@ -76,6 +76,7 @@ impl<'a, TFont: UiFont, TBox: UiBox> TextInputDialogView<'a, TFont, TBox> {
         let is_last = self.input_state.len();
         self.box_content[bc_last].push_str(self.input_state.slice(0, is_last));
         self.box_content[bc_last].push_str(self.cursor.as_slice());
+        self.box_size = compute_text_box_bounds(self.box_content.as_slice(), self.ui_font, self.ui_box, self.text_gap);
     }
 }
 
