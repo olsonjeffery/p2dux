@@ -99,7 +99,7 @@ impl<'a, TViewCtx: DisplayViewContext, TFont: UiFont, TBox: UiBox>
         let mut out = None;
         for event in events.iter() {
             match *event {
-                KeyDown(_, _, key, _, _) =>
+                KeyDown(_, _, key, _, _, _) =>
                     match key {
                         Return => {
                             out = Some(self.input_state.clone());

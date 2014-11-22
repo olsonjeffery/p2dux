@@ -98,3 +98,22 @@ impl<'a, TViewCtx: DisplayViewContext, TOut: Send, TActive: ActiveView<TViewCtx,
         self.inner.passive_update(ctx, ms_time);
     }
 }
+
+// XView
+
+pub struct XViewContext {
+    display: GameDisplay
+}
+
+impl XViewContext {
+    pub fn new(display: GameDisplay) -> XViewContext {
+        XViewContext { display: display }
+    }
+    
+    pub fn get_display<'a>(&'a self) -> &'a GameDisplay {
+        &self.display
+    }
+}
+
+pub trait XView {
+}
