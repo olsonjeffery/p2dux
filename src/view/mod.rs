@@ -5,6 +5,7 @@
 // This file may not be copied, modified, or distributed
 // except according to those terms.
 use std::io::timer;
+use std::any::Any;
 use std::comm::channel;
 use std::mem::{transmute, transmute_copy};
 use time::precise_time_ns;
@@ -12,7 +13,6 @@ use std::time::duration::Duration;
 
 use sdl2::event::poll_event;
 use sdl2::event::Event;
-use sdl2::event::Event::*;
 
 use gfx::GameDisplay;
 
@@ -116,4 +116,43 @@ impl XViewContext {
 }
 
 pub trait XView {
+    fn get_parent(&self) -> Option<&mut XView>;
+    fn my_active(&mut self, ctx: &XViewContext, events: &[Event], time: u64) -> Option<Box<Any>>;
+    fn my_passive(&mut self, ctx: &XViewContext, time: u64);
+    fn parent_passive(&mut self, ctx: &XViewContext, time: u64) {
+        match self.get_parent() {
+            Some(parent) => parent.my_passive(ctx, time),
+            None => {}
+        }
+    }
+    fn enter(&mut self, ctx: &XViewContext) -> Box<Any> {
+        let mut cont = true;
+        let mut events = Vec::new();
+        let mut output: Option<Box<Any>> = None;
+        while cont {
+            let result = {
+                let time = precise_time_ns() / 1000000;
+                self.my_passive(ctx, time);
+                loop {
+                    match poll_event() {
+                        Event::None => { break; },
+                        event => { events.push(event); }
+                    }
+                }
+                let time = precise_time_ns() / 1000000;
+                let result = self.my_active(ctx, events.as_slice(), time);
+                ctx.get_display().renderer.present();
+                events.clear();
+                result
+            };
+            match result {
+                None => {},
+                r => {
+                    cont = false;
+                    output = r;
+                }
+            }
+        }
+        output.expect("View.enter(): Should always be a Some here")
+    }
 }
