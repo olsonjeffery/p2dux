@@ -34,80 +34,15 @@ pub fn throttle(fps: uint, cb: || -> bool) {
     }
 }
 
-pub trait DisplayViewContext {
-    fn get_display<'a>(&'a self) -> &'a GameDisplay;
-}
+// View
 
-// ViewManager API exploration
-pub trait ActiveView<TViewCtx: DisplayViewContext, TOut: Send> : PassiveView<TViewCtx> {
-    fn active_update<'a>(&'a mut self, ctx: &TViewCtx, events: &[Event], ms_time: u64,
-                         passives: &mut Vec<& mut PassiveView<TViewCtx> >)
-                         -> Option<TOut>;
-    fn yield_to<'a, TOtherOut: Send, TActive: ActiveView<TViewCtx, TOtherOut>>(&'a mut self, ctx: &TViewCtx,
-                                active: &mut TActive,
-                                passives: &mut Vec<&mut PassiveView<TViewCtx>>) -> TOtherOut {
-        let (sender, receiver) = channel();
-        let mut cont = true;
-        while cont {
-            let time = precise_time_ns() / 1000000;
-            let mut events = Vec::new();
-            let result = {
-                {
-                    for view in passives.iter_mut() {
-                        println!("before passive update");
-                        view.passive_update(ctx, time);
-                        println!("after passive update");
-                    }
-                }
-                active.passive_update(ctx, time);
-                loop {
-                    match poll_event() {
-                        Event::None => { break; },
-                        event => { events.push(event); }
-                    }
-                }
-                let result = active.active_update(ctx, events.as_slice(), time, passives);
-                ctx.get_display().renderer.present();
-                result
-            };
-            if result.is_some() {
-                cont = false;
-                sender.send(result.expect("definitely gonna be something!"));
-            }
-        }
-        receiver.recv()
-    }
-}
-
-pub trait PassiveView<TViewCtx: DisplayViewContext> {
-    fn passive_update(&mut self, ctx: &TViewCtx, ms_time: u64);
-}
-
-pub struct PassiveBox<'a, TActive: 'a> {
-    inner: &'a mut TActive
-}
-
-impl<'a, TViewCtx: DisplayViewContext, TOut: Send, TActive: ActiveView<TViewCtx, TOut>> PassiveBox<'a, TActive> {
-    pub fn new(item: &'a mut TActive) -> PassiveBox<'a, TActive> {
-        PassiveBox { inner: item }
-    }
-}
-
-impl<'a, TViewCtx: DisplayViewContext, TOut: Send, TActive: ActiveView<TViewCtx, TOut>> PassiveView<TViewCtx> for PassiveBox<'a, TActive> {
-    fn passive_update(&mut self, ctx: &TViewCtx, ms_time: u64) {
-        self.inner.passive_update(ctx, ms_time);
-    }
-}
-
-// XView
-
-pub struct XViewContext {
+pub struct ViewContext {
     display: GameDisplay
 }
 
-impl XViewContext {
-    pub fn new(display: GameDisplay) -> XViewContext {
-        XViewContext { display: display }
+impl ViewContext {
+    pub fn new(display: GameDisplay) -> ViewContext {
+        ViewContext { display: display }
     }
     
     pub fn get_display<'a>(&'a self) -> &'a GameDisplay {
@@ -115,17 +50,29 @@ impl XViewContext {
     }
 }
 
-pub trait XView {
-    fn get_parent(&self) -> Option<&mut XView>;
-    fn my_active(&mut self, ctx: &XViewContext, events: &[Event], time: u64) -> Option<Box<Any>>;
-    fn my_passive(&mut self, ctx: &XViewContext, time: u64);
-    fn parent_passive(&mut self, ctx: &XViewContext, time: u64) {
+impl<'a, TView: View> View for &'a mut TView {
+    fn get_parent<'a>(&'a mut self) -> Option<&'a mut View> {
+        (*self).get_parent()
+    }
+    fn my_active(&mut self, ctx: &ViewContext, events: &[Event], time: u64) -> Option<Box<Any>> {
+        (*self).my_active(ctx, events, time)
+    }
+    fn my_passive(&mut self, ctx: &ViewContext, time: u64) {
+        (*self).my_passive(ctx, time);
+    }
+}
+
+pub trait View {
+    fn get_parent<'a>(&'a mut self) -> Option<&'a mut View>;
+    fn my_active<'a>(&'a mut self, ctx: &ViewContext, events: &[Event], time: u64) -> Option<Box<Any>>;
+    fn my_passive(& mut self, ctx: &ViewContext, time: u64);
+    fn parent_passive(&mut self, ctx: &ViewContext, time: u64) {
         match self.get_parent() {
             Some(parent) => parent.my_passive(ctx, time),
             None => {}
         }
     }
-    fn enter(&mut self, ctx: &XViewContext) -> Box<Any> {
+    fn enter(&mut self, ctx: &ViewContext) -> Box<Any> {
         let mut cont = true;
         let mut events = Vec::new();
         let mut output: Option<Box<Any>> = None;
