@@ -18,22 +18,6 @@ use gfx::GameDisplay;
 
 pub mod prefab;
 
-pub fn throttle(fps: uint, cb: || -> bool) {
-    let target_fps = (1000 / fps) as u64;
-    loop {
-        let next_frame = (precise_time_ns() / 1000000) + target_fps;
-        match cb() {
-            false => break,
-            _ => {}
-        }
-        let now_time = precise_time_ns() / 1000000;
-        if  now_time < next_frame {
-            let sleep_gap = next_frame - now_time;
-            timer::sleep(Duration::milliseconds(sleep_gap as i64));
-        }
-    }
-}
-
 // View
 
 pub struct ViewContext {

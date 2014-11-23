@@ -85,17 +85,10 @@ impl<'a, TFont: UiFont, TBox: UiBox, TParent: View> TextInputDialogView<'a, TFon
     }
 }
 
-struct StubView;
-impl View for StubView {
-    fn get_parent<'a>(&'a mut self) -> Option<&'a mut View> { None }
-    fn my_active(&mut self, ctx: &ViewContext, events: &[Event], time: u64) -> Option<Box<Any>> { None }
-    fn my_passive(&mut self, ctx: &ViewContext, time: u64) {}
-}
-
 impl<'a, TFont: UiFont, TBox: UiBox, TParent: View>
         View for TextInputDialogView<'a, TFont, TBox, TParent> {
     fn get_parent(&mut self) -> Option<&mut View> {
-        Some(&mut self.parent as &mut View)
+        Some(&mut *self.parent as &mut View)
     }
     fn my_passive(&mut self, _ctx: &ViewContext, _time: u64) {}
     fn my_active(&mut self, ctx: &ViewContext, events: &[Event], time: u64) -> Option<Box<Any>> {
