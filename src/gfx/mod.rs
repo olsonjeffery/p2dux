@@ -9,9 +9,10 @@ use std::vec::Vec;
 use std::collections::HashMap;
 use sdl2::sdl;
 use sdl2::render::Renderer;
-use sdl2::video::Window;
+use sdl2::video::{WindowPos, Window, FullscreenType};
 use p2d::sprite::SpriteSheet;
 use sdl2;
+use sdl2::pixels::Color;
 use sdl2_image;
 
 pub mod draw;
@@ -31,14 +32,14 @@ impl GameDisplay {
 
         let (width, height, fullscreen) = screen_size;
         let window = sdl2::video::Window::new(
-            title, sdl2::video::PosCentered, sdl2::video::PosCentered,
+            title, WindowPos::PosCentered, WindowPos::PosCentered,
             width, height, sdl2::video::OPENGL);
         let window = match window {
             Ok(window) => window,
             Err(err) => panic!(format!("failed to create window: {}", err))
         };
         if fullscreen {
-            window.set_fullscreen(sdl2::video::FTTrue);
+            window.set_fullscreen(FullscreenType::FTTrue);
         }
         let renderer = Renderer::from_window(
             window, sdl2::render::RenderDriverIndex::Auto, sdl2::render::ACCELERATED);
@@ -62,12 +63,12 @@ impl GameDisplay {
 
     pub fn set_draw_color(&self, rgb: (u8, u8, u8)) {
         let (r, g, b) = rgb;
-        match self.renderer.set_draw_color(sdl2::pixels::RGB(r, g, b)) {
+        match self.renderer.set_draw_color(Color::RGB(r, g, b)) {
             Ok(()) => {},
             Err(e) => panic!("set_draw_color(): failure: {}", e)
         }
     }
-    pub fn set_draw_sdl2_color(&self, rgb: sdl2::pixels::Color) {
+    pub fn set_draw_sdl2_color(&self, rgb: Color) {
         match self.renderer.set_draw_color(rgb) {
             Ok(()) => {},
             Err(e) => panic!("set_draw_sdl2_color(): failure: {}", e)

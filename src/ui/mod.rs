@@ -6,6 +6,7 @@
 // except according to those terms.
 
 use sdl2::{rect, pixels};
+use sdl2::pixels::Color;
 
 use p2d::sprite::SpriteTile;
 use gfx::GameDisplay;
@@ -62,7 +63,7 @@ pub trait UiBox {
         let tile_size = (unit_size as uint, unit_size as uint);
         // draw background
         let (r, g, b) = bg_color;
-        let bgc = pixels::RGB(r, g, b);
+        let bgc = Color::RGB(r, g, b);
         display.set_draw_sdl2_color(bgc);
         let (rect_w, rect_h) = (w*unit_size, h*unit_size);
         let bg_rect = rect::Rect::new(

@@ -105,15 +105,15 @@ impl<'a, TFont: UiFont, TBox: UiBox, TParent: View>
             match *event {
                 KeyDown(_, _, key, _, _, _) =>
                     match key {
-                        Return => {
+                        KeyCode::Return => {
                             out = Some((box self.input_state.clone()) as Box<Any>);
                             stop_text_input();
                             break;
                         },
-                        Backspace => {
+                        KeyCode::Backspace => {
                             self.input_state.pop();
                         }
-                        Escape => {
+                        KeyCode::Escape => {
                             let outval = (box "".to_string()) as Box<Any>;
                             out = Some(outval);
                             stop_text_input();
